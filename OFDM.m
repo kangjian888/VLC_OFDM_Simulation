@@ -7,6 +7,7 @@ addpath('.\OtherFunction');
 addpath('.\Modem');
 addpath('.\PreEmphasis');
 addpath('.\Source');
+addpath('.\Destination');
 
 NoiseRMS = 2.5e-3; %what is the meaning of this parameter
 
@@ -61,13 +62,15 @@ end
 BitPerOFDMSymbol = sum(log2(M_est_NonZero));
 BitRateTotal = OFDMBandwidth / (N + Ncp) * BitPerOFDMSymbol;
 
-[ParBitStream, OFDMSymbol,PaddingNum] = BitStreamGeneration(BitPerOFDMSymbol); %Bitstreaming generation
+[ParBitStream, OFDMSymbol, PaddingNum, SizePicture, im] = BitStreamGeneration(BitPerOFDMSymbol); %Bitstreaming generation
 
 %% Buffer
 ZFBuffer = zeros(BitPerOFDMSymbol, OFDMSymbol);
 MMSEBuffer = zeros(BitPerOFDMSymbol,OFDMSymbol);
+BERMMSESymbol = zeros(3,OFDMSymbol); %Store the bit error rate per symbol using mmse 
+BERZFSymbol   = zeros(3,OFDMSymbol); %Store the bit error rate per symbol using zf
 
-%% Transmitting nSymbol'th symbol
+% Transmitting nSymbol'th symbol
 for nSymbol = 1 : OFDMSymbol
 	Temp = ParBitStream(:,nSymbol);
 	% modulate data using M-QAM
@@ -137,8 +140,31 @@ for nSymbol = 1 : OFDMSymbol
 	%Buffer
 	ZFBuffer(:, nSymbol) = BitsZF;
 	MMSEBuffer(:, nSymbol) = BitsMMSE;
+
+	%BER Calculation for each OFDM symbol
+	BERMMSESymbol(:,nSymbol) = step(BER, Temp, BitsMMSE);
+	release(BER);
+	BERZFSymbol(:,nSymbol) = step(BER, Temp, BitsZF);
+	release(BER);
 end
 	
+	%Picture Recovery
+	im_received_MMSE = im_recover(MMSEBuffer, PaddingNum, SizePicture);
+	im_received_ZF   = im_recover(ZFBuffer, PaddingNum, SizePicture);
+	%Picture showing
+	figure(1)
+	subplot(1,3,1);
+	imshow(im);
+	title('\bfTransmitted Picture');
+	subplot(1,3,2);
+	imshow(im_received_MMSE);
+	title('\bfMMSE Received Picture');
+	subplot(1,3,3);
+	imshow(im_received_ZF);
+	title('\bfZF Received Picture');	
+
+
+
 	%BER Calcualtion
 	berZF = step(BER, ParBitStream(:), ZFBuffer(:));
 	release(BER);

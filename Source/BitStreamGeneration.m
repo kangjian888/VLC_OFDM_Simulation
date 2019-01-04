@@ -1,12 +1,13 @@
-function [ParBitStream, OFDMSymbol,PaddingNum] = BitStreamGeneration(BitPerOFDMSymbol)
+function [ParBitStream, OFDMSymbol,PaddingNum, PictureSize, im] = BitStreamGeneration(BitPerOFDMSymbol)
 %% This function is used to transform a picture to bit stream
 %BitPerOFDMSymbol: Total bit number in one OFDM symbol
 %ParBitStream: Output bit matrix. Each row represents one OFDM symbol
 %OFDMSymbol: Number of OFDMSymbol
 %PaddingNum: Bit number needed to add to form complete OFDM symbol
-
+%PictureSize: the size of the picture
 %%Reading Image file
 im = imread('JPG.jpg');
+PictureSize = size(im);
 im_bin_1 = im(:);
 im_bin_2 = dec2bin(im_bin_1,8)';
 im_bin_3 = im_bin_2(:);%transfer matrix to bit sequence
